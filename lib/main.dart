@@ -20,7 +20,27 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const VideoPlayerPage(),
+      home: const HomePage(),
+    );
+  }
+}
+
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: IconButton(
+            icon: const Icon(Icons.forward),
+            onPressed: () {
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const VideoPlayerPage()));
+            }),
+      ),
     );
   }
 }
@@ -47,8 +67,11 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     _controller =
         VideoPlayerController.networkUrl(Uri.parse(videoUrlFullScreen))
           ..initialize().then((_) {
-            setState(() {});
-            _controller.play();
+            if (mounted) {
+              setState(() {
+                _controller.play();
+              });
+            }
           });
     // Create the small video element
     _smallVideoElement = html.VideoElement()
