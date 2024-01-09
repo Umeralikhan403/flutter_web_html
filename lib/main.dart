@@ -3,6 +3,7 @@ import 'dart:html' as html;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:video_player/video_player.dart';
 
 void main() {
   runApp(const MyApp());
@@ -24,68 +25,69 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class VideoPlayerPage extends StatelessWidget {
-  final String videoUrl1 =
-      'https://kinterak-v2-assets.s3.eu-west-2.amazonaws.com/experience_videos/memories1.mp4';
-  final String videoUrl2 =
-      'https://kinterak-v2-assets.s3.eu-west-2.amazonaws.com/experience_videos/memories.mp4';
-
+class VideoPlayerPage extends StatefulWidget {
   const VideoPlayerPage({Key? key}) : super(key: key);
 
   @override
+  State<VideoPlayerPage> createState() => _VideoPlayerPageState();
+}
+
+class _VideoPlayerPageState extends State<VideoPlayerPage> {
+  late VideoPlayerController _controller;
+  late html.VideoElement _smallVideoElement;
+  final String videoUrlFullScreen =
+      'https://kinterak-v2-assets.s3.eu-west-2.amazonaws.com/experience_videos/memories1.mp4';
+  final String videoUrlSmallScreen =
+      'https://kinterak-v2-assets.s3.eu-west-2.amazonaws.com/experience_videos/memories.mp4';
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize the large video controller
+    _controller =
+        VideoPlayerController.networkUrl(Uri.parse(videoUrlFullScreen))
+          ..initialize().then((_) {
+            setState(() {});
+            _controller.play();
+          });
+    // Create the small video element
+    _smallVideoElement = html.VideoElement()
+      ..src = videoUrlSmallScreen
+      ..autoplay = true
+      ..controls = true
+      ..style.width = '100%'
+      ..style.height = '100%';
+
+    // Register the small video element with the platformViewRegistry
+    ui.platformViewRegistry
+        .registerViewFactory('small_video', (int viewId) => _smallVideoElement);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Create two video elements
-    final videoElement1 = html.VideoElement()
-      ..src = videoUrl1
-      ..autoplay = true
-      ..controls = true
-      ..style.width = '100%'
-      ..style.height = '100%'
-      ..muted = true; // Mute the video
-    final videoElement2 = html.VideoElement()
-      ..src = videoUrl2
-      ..autoplay = true
-      ..controls = true
-      ..style.width = '100%'
-      ..style.height = '100%'
-      ..muted = false; // Mute the second video
-
-    // Register both video elements with the platformViewRegistry
-    ui.platformViewRegistry.registerViewFactory(
-      'video_element_1',
-      (int viewId) => videoElement1,
-    );
-    ui.platformViewRegistry.registerViewFactory(
-      'video_element_2',
-      (int viewId) => videoElement2,
-    );
-
-    // Maintain an aspect ratio of 16:9 for the videos
-    const double aspectRatio = 16 / 9;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Flutter Web Video Player Example'),
       ),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Flexible(
-              child: AspectRatio(
-                aspectRatio: aspectRatio,
-                child: HtmlElementView(viewType: 'video_element_1'),
-              ),
-            ),
-            SizedBox(height: 10), // Spacing between the videos
-            Flexible(
-              child: AspectRatio(
-                aspectRatio: aspectRatio,
-                child: HtmlElementView(viewType: 'video_element_2'),
-              ),
-            ),
-          ],
-        ),
+      body: Stack(
+        children: [
+          // Fullscreen video using the video_player package
+          VideoPlayer(_controller),
+          // Small video using an HTML element positioned at the bottom right corner
+          const Positioned(
+            right: 10,
+            bottom: 10,
+            width: 160, // Set the width of the small video
+            height: 90, // Set the height of the small video
+            child: HtmlElementView(viewType: 'small_video'),
+          ),
+        ],
       ),
     );
   }
