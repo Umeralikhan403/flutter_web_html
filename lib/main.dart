@@ -1,6 +1,4 @@
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
-import 'dart:ui' as ui;
+import 'dart:js' as js;
 
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
@@ -54,7 +52,7 @@ class VideoPlayerPage extends StatefulWidget {
 
 class _VideoPlayerPageState extends State<VideoPlayerPage> {
   late VideoPlayerController _controller;
-  late html.VideoElement _smallVideoElement;
+  // late html.VideoElement _smallVideoElement;
   final String videoUrlFullScreen =
       'https://kinterak-v2-assets.s3.eu-west-2.amazonaws.com/experience_videos/memories1.mp4';
   final String videoUrlSmallScreen =
@@ -73,22 +71,23 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
               });
             }
           });
-    // Create the small video element
-    _smallVideoElement = html.VideoElement()
-      ..src = videoUrlSmallScreen
-      ..autoplay = true
-      ..controls = true
-      ..style.width = '100%'
-      ..style.height = '100%';
+    playSmallVideo(videoUrlSmallScreen);
+  }
 
-    // Register the small video element with the platformViewRegistry
-    ui.platformViewRegistry
-        .registerViewFactory('small_video', (int viewId) => _smallVideoElement);
+  void playSmallVideo(String url) {
+    // Call JS function to create and play the video
+    js.context.callMethod('createSmallVideoElement', [url]);
+  }
+
+  void removeSmallVideo() {
+    // Call JS function to remove the video
+    js.context.callMethod('removeSmallVideoElement');
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    removeSmallVideo();
     super.dispose();
   }
 
@@ -102,14 +101,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         children: [
           // Fullscreen video using the video_player package
           VideoPlayer(_controller),
-          // Small video using an HTML element positioned at the bottom right corner
-          const Positioned(
-            right: 10,
-            bottom: 10,
-            width: 160, // Set the width of the small video
-            height: 90, // Set the height of the small video
-            child: HtmlElementView(viewType: 'small_video'),
-          ),
         ],
       ),
     );
