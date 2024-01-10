@@ -60,41 +60,44 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
 
   @override
   void initState() {
-    super.initState();
-    // Initialize the large video controller
     _controller =
         VideoPlayerController.networkUrl(Uri.parse(videoUrlFullScreen))
           ..initialize().then((_) {
-            if (mounted) {
-              setState(() {
-                _controller.play();
-              });
-            }
+            setState(() {});
           });
-    playSmallVideo(videoUrlSmallScreen);
-    /////
+    // Setup an interop function so JavaScript knows what to call when the video ends
     js.context['onVideoEnd'] = js.allowInterop(onVideoEnd);
+    super.initState();
+  }
+
+  void playVideos() {
+    // Play the large video using the video_player package
+    if (_controller.value.isInitialized) {
+      _controller.play();
+    }
+    // Play the smaller video using JavaScript
+    playSmallVideo(videoUrlSmallScreen);
   }
 
   void onVideoEnd() {
     print('The small video has finished playing');
-    Navigator.pop(context);
+    removeSmallVideo();
+    // Navigator.pop(context);
   }
 
-  void playSmallVideo(String url) {
+  Future playSmallVideo(String url) async {
     // Call JS function to create and play the video
-    js.context.callMethod('createSmallVideoElement', [url]);
+    await js.context.callMethod('createSmallVideoElement', [url]);
   }
 
-  void removeSmallVideo() {
+  Future removeSmallVideo() async {
     // Call JS function to remove the video
-    js.context.callMethod('removeSmallVideoElement');
+    await js.context.callMethod('removeSmallVideoElement');
   }
 
   @override
   void dispose() {
     _controller.dispose();
-    removeSmallVideo();
     super.dispose();
   }
 
@@ -106,8 +109,15 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       ),
       body: Stack(
         children: [
-          // Fullscreen video using the video_player package
-          VideoPlayer(_controller),
+          if (_controller.value.isInitialized) VideoPlayer(_controller),
+          Positioned(
+            left: 20,
+            bottom: 20,
+            child: ElevatedButton(
+              onPressed: playVideos, // Play videos when the button is tapped
+              child: const Text('Play Videos'),
+            ),
+          ),
         ],
       ),
     );
