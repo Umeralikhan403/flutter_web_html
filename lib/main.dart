@@ -72,6 +72,13 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
             }
           });
     playSmallVideo(videoUrlSmallScreen);
+    /////
+    js.context['onVideoEnd'] = js.allowInterop(onVideoEnd);
+  }
+
+  void onVideoEnd() {
+    print('The small video has finished playing');
+    Navigator.pop(context);
   }
 
   void playSmallVideo(String url) {

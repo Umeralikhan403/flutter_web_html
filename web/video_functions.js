@@ -18,6 +18,15 @@ function createSmallVideoElement(url) {
     video.setAttribute('playsinline', ''); // Ensure inline playback in iOS
     document.body.appendChild(video); // Append to body
     video.load(); // Start loading the video
+
+    // Add an 'ended' event listener to the video element
+    video.addEventListener('ended', function () {
+        // Video has finished playing
+        // This will call the Dart function 'onVideoEnd'
+        if (typeof window.onVideoEnd === 'function') {
+            window.onVideoEnd();
+        }
+    });
 }
 
 function removeSmallVideoElement() {
